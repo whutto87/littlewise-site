@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>LittleWise Baby. The baby book that builds itself.</title>
+<meta name="description" content="Track your baby's growth, capture milestones, and watch them change week by week. Everything stays on your device. Nothing gets sold." />
+
+<!-- Open Graph for link previews -->
+<meta property="og:title" content="LittleWise Baby" />
+<meta property="og:description" content="A privacy-first pregnancy and baby tracking app. Your family, not your data." />
+<meta property="og:type" content="website" />
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Mulish:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+<style>
+  :root {
+    --ink: #2A3D33;
+    --sage: #7CC8A0;
+    --sage-deep: #4E9E78;
+    --mist: #EDF2EC;
+    --cream: #FBFAF6;
+    --apricot: #E9A484;
+    --muted: #6E827659;
+    --muted-solid: #6E8276;
+
+    --display: "Fraunces", Georgia, serif;
+    --body: "Mulish", -apple-system, BlinkMacSystemFont, sans-serif;
+
+    --maxw: 1080px;
+    --rail-x: 48px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+
+  body {
+    font-family: var(--body);
+    color: var(--ink);
+    background: var(--mist);
+    line-height: 1.6;
+    overflow-x: hidden;
+    position: relative;
+  }
+
+  /* ---------- Drifting background shapes (parallax depth) ---------- */
+  .bg-layer {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    overflow: hidden;
+  }
+  .blob {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(8px);
+    opacity: 0.5;
+    will-change: transform;
+  }
+  .blob-1 { width: 420px; height: 420px; top: 4%;  left: -120px;
+    background: radial-gradient(circle at 30% 30%, #BFE3CE, transparent 70%); }
+  .blob-2 { width: 520px; height: 520px; top: 38%; right: -180px;
+    background: radial-gradient(circle at 40% 40%, #F4D2BE, transparent 70%); opacity: 0.4; }
+  .blob-3 { width: 380px; height: 380px; top: 72%; left: -100px;
+    background: radial-gradient(circle at 50% 50%, #CDE9D9, transparent 70%); }
+
+  /* Logo watermark (parallax) */
+  .logo-watermark { position: absolute; opacity: 0.06; will-change: transform; }
+  .wm-top { top: 7%; right: -80px; }
+  .wm-bottom { top: 74%; left: -70px; }
+  .wm-mark, .wm-img { width: 360px; height: 360px; border-radius: 72px; display: grid; place-items: center; }
+  .wm-mark { background: linear-gradient(150deg, var(--sage), var(--sage-deep)); color: #fff;
+    font-family: var(--display); font-weight: 600; font-size: 152px; line-height: 1; }
+  .wm-img { object-fit: contain; }
+
+  /* ---------- Growth thread (the signature) ---------- */
+  .thread {
+    position: fixed;
+    left: var(--rail-x);
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    z-index: 2;
+    pointer-events: none;
+  }
+  .thread-track {
+    position: absolute; inset: 0;
+    background: rgba(78,158,120,0.16);
+  }
+  .thread-fill {
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 100%;
+    background: linear-gradient(var(--sage), var(--sage-deep));
+    transform-origin: top;
+    transform: scaleY(0);
+    will-change: transform;
+  }
+  .thread-bead {
+    position: fixed;
+    left: var(--rail-x);
+    width: 14px; height: 14px;
+    margin-left: -6px;
+    border-radius: 50%;
+    background: var(--cream);
+    border: 3px solid var(--sage-deep);
+    z-index: 3;
+    will-change: transform;
+    box-shadow: 0 4px 14px rgba(78,158,120,0.35);
+  }
+
+  /* ---------- Layout shell ---------- */
+  .wrap {
+    position: relative;
+    z-index: 1;
+    max-width: var(--maxw);
+    margin: 0 auto;
+    padding: 0 28px 0 92px;
+  }
+
+  /* ---------- Nav ---------- */
+  nav {
+    position: relative; z-index: 4;
+    display: flex; align-items: center; justify-content: space-between;
+    max-width: var(--maxw); margin: 0 auto;
+    padding: 22px 28px 22px 92px;
+  }
+  .brand { display: flex; align-items: center; gap: 11px; font-family: var(--display);
+    font-weight: 600; font-size: 1.32rem; letter-spacing: -0.01em; color: var(--ink); }
+  .brand .mark {
+    width: 34px; height: 34px; border-radius: 11px;
+    background: linear-gradient(150deg, var(--sage), var(--sage-deep));
+    display: grid; place-items: center; color: #fff; font-size: 0.9rem; font-weight: 700;
+    box-shadow: 0 6px 16px rgba(78,158,120,0.4);
+  }
+  .nav-cta {
+    font-family: var(--body); font-weight: 700; font-size: 0.92rem;
+    color: var(--ink); text-decoration: none;
+    padding: 9px 18px; border-radius: 100px; border: 1.5px solid rgba(46,61,51,0.18);
+    transition: border-color .2s ease, background .2s ease;
+  }
+  .nav-cta:hover { border-color: var(--sage-deep); background: rgba(124,200,160,0.12); }
+
+  /* ---------- Hero ---------- */
+  .hero { padding: 56px 0 96px; display: grid; grid-template-columns: 1.05fr 0.95fr;
+    gap: 40px; align-items: center; }
+  .eyebrow {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-weight: 700; font-size: 0.76rem; letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--sage-deep); margin-bottom: 22px;
+  }
+  .eyebrow::before { content: ""; width: 22px; height: 2px; background: var(--sage-deep); border-radius: 2px; }
+  .hero h1 {
+    font-family: var(--display); font-weight: 500; font-size: clamp(2.6rem, 6vw, 4.1rem);
+    line-height: 1.04; letter-spacing: -0.02em; color: var(--ink); margin-bottom: 22px;
+  }
+  .hero h1 em { font-style: italic; color: var(--sage-deep); }
+  .hero p.lead { font-size: 1.16rem; color: var(--muted-solid); max-width: 30ch; margin-bottom: 34px; }
+  .cta-row { display: flex; gap: 14px; flex-wrap: wrap; align-items: center; }
+  .btn {
+    font-family: var(--body); font-weight: 700; font-size: 1rem; text-decoration: none;
+    padding: 15px 28px; border-radius: 100px; display: inline-flex; align-items: center; gap: 9px;
+    transition: transform .18s ease, box-shadow .2s ease, background .2s ease;
+  }
+  .btn-primary { background: var(--sage-deep); color: #fff; box-shadow: 0 10px 28px rgba(78,158,120,0.42); }
+  .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 14px 34px rgba(78,158,120,0.52); }
+  .btn-ghost { color: var(--ink); padding: 15px 8px; }
+  .btn-ghost:hover { color: var(--sage-deep); }
+  .btn-ghost::after { content: " →"; }
+
+  /* ---------- Phone mockup (swap with real screenshots later) ---------- */
+  .phone-stage { display: grid; place-items: center; }
+  .phone {
+    width: min(300px, 78vw); aspect-ratio: 9 / 19;
+    background: #fff; border-radius: 38px; padding: 12px;
+    box-shadow: 0 30px 70px rgba(46,61,51,0.22), 0 6px 18px rgba(46,61,51,0.12);
+    border: 1px solid rgba(46,61,51,0.06);
+    will-change: transform;
+  }
+  .phone-screen { width: 100%; height: 100%; border-radius: 28px; overflow: hidden;
+    background: var(--mist); display: flex; flex-direction: column; }
+  .ps-top { padding: 20px 18px 10px; background: linear-gradient(160deg, #E8F3EC, #F6F1EA); }
+  .ps-top small { font-weight: 700; color: var(--sage-deep); font-size: 0.66rem; letter-spacing: 0.12em; text-transform: uppercase; }
+  .ps-top h3 { font-family: var(--display); font-weight: 600; font-size: 1.18rem; margin-top: 4px; color: var(--ink); }
+  .ps-chart { flex: 1; padding: 10px 14px; }
+  .ps-strip { display: flex; gap: 6px; padding: 12px 14px 18px; }
+  .ps-frame { flex: 1; aspect-ratio: 1; border-radius: 9px;
+    background: linear-gradient(150deg, #CFE7D8, #F1D9C7); opacity: 0.9; }
+  .ps-frame:nth-child(2){ background: linear-gradient(150deg,#C2E2CF,#EAD0BD);}
+  .ps-frame:nth-child(3){ background: linear-gradient(150deg,#D6ECE0,#F4DECB);}
+  .ps-frame:nth-child(4){ background: linear-gradient(150deg,#BFE0CD,#E8CBB6);}
+
+  /* ---------- Sections ---------- */
+  section.feat { padding: 70px 0; position: relative; }
+  .node-label {
+    display: inline-flex; align-items: center; gap: 10px;
+    font-weight: 700; font-size: 0.74rem; letter-spacing: 0.13em; text-transform: uppercase;
+    color: var(--sage-deep); margin-bottom: 16px;
+  }
+  .feat h2 {
+    font-family: var(--display); font-weight: 500; font-size: clamp(1.9rem, 4vw, 2.9rem);
+    line-height: 1.08; letter-spacing: -0.018em; color: var(--ink); margin-bottom: 16px; max-width: 18ch;
+  }
+  .feat p { font-size: 1.1rem; color: var(--muted-solid); max-width: 46ch; }
+
+  .feat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; align-items: center; }
+  .feat-grid.flip .feat-card { order: -1; }
+
+  .feat-card {
+    background: var(--cream); border-radius: 26px; padding: 32px;
+    border: 1px solid rgba(46,61,51,0.07);
+    box-shadow: 0 18px 50px rgba(46,61,51,0.08);
+  }
+
+  /* Privacy band */
+  .band { background: var(--ink); color: #EAF1EC; border-radius: 30px; padding: 56px 44px; margin: 24px 0; }
+  .band .node-label { color: var(--sage); }
+  .band h2 { color: #fff; }
+  .band p { color: #C3D2C8; }
+
+  /* small reusable visual blocks inside cards */
+  .mini-chart { width: 100%; height: 150px; }
+  .pill-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
+  .pill { font-size: 0.82rem; font-weight: 600; padding: 7px 13px; border-radius: 100px;
+    background: rgba(124,200,160,0.16); color: var(--sage-deep); }
+  .pill.warm { background: rgba(233,164,132,0.18); color: #C06B43; }
+  .reminder { display: flex; align-items: center; gap: 14px; padding: 14px 16px; border-radius: 16px;
+    background: rgba(124,200,160,0.12); margin-bottom: 10px; }
+  .reminder .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--sage-deep); flex: none; }
+  .reminder b { font-weight: 700; }
+  .reminder span { color: var(--muted-solid); font-size: 0.92rem; }
+
+  /* ---------- Closing CTA ---------- */
+  .closing { text-align: center; padding: 96px 0 40px; }
+  .closing h2 { font-family: var(--display); font-weight: 500; font-size: clamp(2.2rem, 5vw, 3.4rem);
+    letter-spacing: -0.02em; margin-bottom: 18px; }
+  .closing p { font-size: 1.14rem; color: var(--muted-solid); max-width: 38ch; margin: 0 auto 32px; }
+
+  /* ---------- Footer ---------- */
+  footer { position: relative; z-index: 1; border-top: 1px solid rgba(46,61,51,0.1);
+    margin-top: 40px; }
+  .foot-inner { max-width: var(--maxw); margin: 0 auto; padding: 34px 28px 34px 92px;
+    display: flex; justify-content: space-between; align-items: center; gap: 20px; flex-wrap: wrap; }
+  .foot-links { display: flex; gap: 22px; flex-wrap: wrap; }
+  .foot-links a { color: var(--muted-solid); text-decoration: none; font-weight: 600; font-size: 0.95rem; }
+  .foot-links a:hover { color: var(--sage-deep); }
+  .foot-note { color: var(--muted-solid); font-size: 0.86rem; }
+
+  /* ---------- Scroll reveal ---------- */
+  .reveal { opacity: 0; transform: translateY(26px); transition: opacity .7s ease, transform .7s ease; }
+  .reveal.in { opacity: 1; transform: none; }
+
+  /* ---------- Explicit privacy promises ---------- */
+  .promises { margin-top: 28px; display: flex; flex-direction: column; gap: 16px; }
+  .promise { display: flex; gap: 14px; align-items: flex-start; max-width: 60ch; }
+  .promise .check { flex: none; width: 26px; height: 26px; border-radius: 50%;
+    background: var(--sage); color: var(--ink); font-weight: 800; font-size: 0.85rem;
+    display: grid; place-items: center; margin-top: 2px; }
+  .promise b { color: #fff; font-weight: 700; }
+  .promise div { color: #C3D2C8; font-size: 1.02rem; }
+
+  /* ---------- Keepsake band ---------- */
+  .keepsake-band {
+    background: linear-gradient(135deg, #F7EADF 0%, #ECF2EA 100%);
+    border-radius: 30px; padding: 56px 44px; margin: 24px 0;
+    display: grid; grid-template-columns: 1.05fr 0.95fr; gap: 36px; align-items: center;
+    border: 1px solid rgba(46,61,51,0.06);
+  }
+  .keepsake-band .node-label { color: #C06B43; }
+  .book-stack { position: relative; height: 250px; }
+  .book-stack .page {
+    position: absolute; left: 50%; top: 50%; width: 168px; height: 210px;
+    border-radius: 8px 14px 14px 8px; will-change: transform;
+    box-shadow: 0 18px 40px rgba(46,61,51,0.18);
+  }
+  .book-stack .p1 { background: linear-gradient(150deg, var(--sage), var(--sage-deep));
+    transform: translate(-50%,-50%) rotate(-4deg); z-index: 3; display: grid; place-items: end center; }
+  .book-stack .p2 { background: linear-gradient(150deg, #F1D9C7, #E9A484);
+    transform: translate(-46%,-52%) rotate(3deg); z-index: 2; }
+  .book-stack .p3 { background: #FBFAF6;
+    transform: translate(-42%,-49%) rotate(8deg); z-index: 1; }
+  .book-title { font-family: var(--display); color: #fff; font-weight: 600; font-size: 1.02rem;
+    padding-bottom: 22px; text-align: center; width: 80%; line-height: 1.2; }
+
+  /* ---------- Plans ---------- */
+  .plans-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+  .plan { background: var(--cream); border: 1px solid rgba(46,61,51,0.08);
+    border-radius: 24px; padding: 32px; position: relative; }
+  .plan.featured { border: 1.5px solid var(--sage); box-shadow: 0 18px 50px rgba(78,158,120,0.16); }
+  .plan .tag { position: absolute; top: 22px; right: 22px; font-size: 0.72rem; font-weight: 700;
+    letter-spacing: 0.1em; text-transform: uppercase; color: #fff; background: var(--sage-deep);
+    padding: 5px 12px; border-radius: 100px; }
+  .plan h3 { font-family: var(--display); font-weight: 600; font-size: 1.6rem; color: var(--ink); margin-bottom: 4px; }
+  .plan .sub { color: var(--muted-solid); font-size: 0.96rem; margin-bottom: 20px; }
+  .plan ul { list-style: none; display: flex; flex-direction: column; gap: 12px; }
+  .plan li { display: flex; gap: 11px; align-items: flex-start; font-size: 1rem; color: var(--ink); }
+  .plan li::before { content: "✓"; color: var(--sage-deep); font-weight: 800; flex: none; }
+  .grandfather { margin-top: 22px; padding: 14px 16px; border-radius: 14px;
+    background: rgba(124,200,160,0.16); color: var(--sage-deep); font-weight: 700; font-size: 0.96rem; }
+  .print-callout { margin-top: 24px; background: linear-gradient(135deg, #F7EADF, #F3E2D2);
+    border-radius: 22px; padding: 24px 30px; display: flex; align-items: center; justify-content: space-between; gap: 20px; }
+  .print-callout b { display: block; font-family: var(--display); font-weight: 600; font-size: 1.2rem; color: var(--ink); margin-bottom: 4px; }
+  .print-callout span { color: #9A6A4C; font-size: 0.96rem; }
+  .print-icon { font-size: 2.4rem; flex: none; }
+
+  /* ---------- Download chooser ---------- */
+  .download-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 22px;
+    max-width: 760px; margin: 8px auto 0; text-align: left; }
+  .dl-card { background: var(--cream); border: 1px solid rgba(46,61,51,0.08);
+    border-radius: 24px; padding: 30px; }
+  .dl-os { display: inline-block; font-weight: 700; font-size: 0.76rem; letter-spacing: 0.12em;
+    text-transform: uppercase; color: var(--sage-deep); margin-bottom: 10px; }
+  .dl-card > p { color: var(--muted-solid); font-size: 1rem; margin: 0 0 18px; max-width: none; }
+  .dl-steps { list-style: none; display: flex; flex-direction: column; gap: 15px; }
+  .dl-steps li { font-size: 0.98rem; color: var(--ink); line-height: 1.5; }
+  .dl-steps li b { color: var(--sage-deep); }
+  .dl-steps a { display: inline-block; margin-top: 7px; font-weight: 700; color: var(--sage-deep);
+    text-decoration: none; border-bottom: 2px solid rgba(124,200,160,0.5); }
+  .dl-steps a:hover { border-color: var(--sage-deep); }
+
+  /* ---------- Responsive ---------- */
+  @media (max-width: 860px) {
+    :root { --rail-x: 0px; }
+    .thread, .thread-bead { display: none; }
+    .wrap { padding: 0 22px; }
+    nav { padding: 20px 22px; }
+    .foot-inner { padding: 30px 22px; }
+    .hero { grid-template-columns: 1fr; gap: 36px; padding: 36px 0 70px; }
+    .hero .phone-stage { order: -1; }
+    .feat-grid { grid-template-columns: 1fr; gap: 24px; }
+    .feat-grid.flip .feat-card { order: 0; }
+    .band { padding: 40px 26px; }
+    .keepsake-band { grid-template-columns: 1fr; padding: 40px 26px; gap: 28px; }
+    .book-stack { height: 240px; margin-top: 8px; }
+    .plans-grid { grid-template-columns: 1fr; }
+    .print-callout { flex-direction: column; align-items: flex-start; text-align: left; }
+    .download-grid { grid-template-columns: 1fr; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    .reveal { opacity: 1 !important; transform: none !important; transition: none; }
+    .blob, .phone, .thread-fill, .thread-bead { will-change: auto; }
+  }
+</style>
+</head>
+<body>
+
+  <!-- Drifting depth shapes -->
+  <div class="bg-layer" aria-hidden="true">
+    <div class="blob blob-1" data-depth="0.18"></div>
+    <div class="blob blob-2" data-depth="0.30"></div>
+    <div class="blob blob-3" data-depth="0.12"></div>
+
+    <!-- Logo watermark drifts faster than the page to make the parallax depth visible.
+         To use your real logo, replace each .wm-mark div with:
+         <img src="logo.png" class="wm-img" alt="" /> -->
+    <div class="logo-watermark wm-top" data-depth="0.26"><div class="wm-mark">LW</div></div>
+    <div class="logo-watermark wm-bottom" data-depth="0.20"><div class="wm-mark">LW</div></div>
+  </div>
+
+  <!-- Growth thread signature -->
+  <div class="thread" aria-hidden="true">
+    <div class="thread-track"></div>
+    <div class="thread-fill" id="threadFill"></div>
+  </div>
+  <div class="thread-bead" id="threadBead" aria-hidden="true"></div>
+
+  <nav>
+    <div class="brand"><span class="mark">LW</span> LittleWise</div>
+    <a class="nav-cta" href="#get">Get The App</a>
+  </nav>
+
+  <main class="wrap">
+
+    <!-- HERO -->
+    <header class="hero">
+      <div class="reveal in">
+        <span class="eyebrow">Privacy-First Baby Tracking</span>
+        <h1>The baby book that <em>builds itself</em>.</h1>
+        <p class="lead">Track growth, capture milestones, and watch them change week by week. It all stays on your phone.</p>
+        <div class="cta-row">
+          <a class="btn btn-primary" href="https://testflight.apple.com/join/VZbVWYhA">Download On TestFlight</a>
+          <a class="btn btn-ghost" href="https://whutto87.github.io/littlewise-privacy/">Our Privacy Promise</a>
+        </div>
+      </div>
+      <div class="phone-stage">
+        <div class="phone" id="heroPhone">
+          <div class="phone-screen">
+            <div class="ps-top">
+              <small>This Week</small>
+              <h3>Mia is in the 62nd percentile</h3>
+            </div>
+            <div class="ps-chart">
+              <svg class="mini-chart" viewBox="0 0 240 150" preserveAspectRatio="none" aria-hidden="true">
+                <defs>
+                  <linearGradient id="g1" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0" stop-color="#7CC8A0" stop-opacity="0.35"/>
+                    <stop offset="1" stop-color="#7CC8A0" stop-opacity="0"/>
+                  </linearGradient>
+                </defs>
+                <path d="M0,120 C40,110 70,86 110,72 C150,58 190,46 240,30 L240,150 L0,150 Z" fill="url(#g1)"/>
+                <path d="M0,120 C40,110 70,86 110,72 C150,58 190,46 240,30" fill="none" stroke="#4E9E78" stroke-width="3" stroke-linecap="round"/>
+                <circle cx="240" cy="30" r="5" fill="#4E9E78"/>
+              </svg>
+            </div>
+            <div class="ps-strip">
+              <div class="ps-frame"></div>
+              <div class="ps-frame"></div>
+              <div class="ps-frame"></div>
+              <div class="ps-frame"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- PRIVACY BAND -->
+    <section class="feat reveal">
+      <div class="band">
+        <span class="node-label">The Promise</span>
+        <h2>Nothing about your baby is collected, stored, or shared. Unless you say so.</h2>
+        <p>Most baby apps are data companies wearing a friendly face. LittleWise is built the opposite way. Your information lives on your phone, not on our servers, and it stays there until you choose otherwise.</p>
+        <div class="promises">
+          <div class="promise"><span class="check">✓</span><div><b>Your data stays on your device.</b> Photos, journal entries, growth logs, and milestones never leave your phone unless you turn on a feature that needs them to.</div></div>
+          <div class="promise"><span class="check">✓</span><div><b>Our servers hold one thing.</b> Your sign-in email and password, so you can log in. Nothing about your child is ever kept on our side.</div></div>
+          <div class="promise"><span class="check">✓</span><div><b>Nothing is ever sold.</b> No advertising profiles, no data brokers, no quiet sharing. Not now, not later.</div></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- GROWTH -->
+    <section class="feat">
+      <div class="feat-grid reveal">
+        <div>
+          <span class="node-label">Growth</span>
+          <h2>Growth you can actually read.</h2>
+          <p>Log a weight and instantly see where your baby lands on the WHO and CDC curves. Every percentile is calculated right on your phone, so the numbers are yours alone.</p>
+        </div>
+        <div class="feat-card">
+          <svg class="mini-chart" viewBox="0 0 300 150" preserveAspectRatio="none" aria-hidden="true">
+            <path d="M0,135 C50,120 90,96 150,80 C210,64 260,52 300,36 L300,150 L0,150 Z" fill="rgba(124,200,160,0.22)"/>
+            <path d="M0,135 C50,120 90,96 150,80 C210,64 260,52 300,36" fill="none" stroke="#4E9E78" stroke-width="3.5" stroke-linecap="round"/>
+            <circle cx="150" cy="80" r="5" fill="#E9A484"/>
+            <circle cx="300" cy="36" r="6" fill="#4E9E78"/>
+          </svg>
+          <div class="pill-row"><span class="pill">WHO Curves</span><span class="pill">CDC Curves</span><span class="pill">On-Device</span></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TIMELAPSE -->
+    <section class="feat">
+      <div class="feat-grid flip reveal">
+        <div>
+          <span class="node-label">Timelapse</span>
+          <h2>Watch them grow.</h2>
+          <p>Take a quick photo in the same spot every week. LittleWise lines them up into a timelapse, so months of tiny changes turn into a few seconds you will want to watch again and again.</p>
+        </div>
+        <div class="feat-card">
+          <div class="ps-strip" style="padding:0;">
+            <div class="ps-frame"></div>
+            <div class="ps-frame"></div>
+            <div class="ps-frame"></div>
+            <div class="ps-frame"></div>
+          </div>
+          <div class="pill-row" style="margin-top:16px;"><span class="pill">Same Spot, Every Week</span><span class="pill warm">Becomes A Video</span></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- MILESTONES -->
+    <section class="feat">
+      <div class="feat-grid reveal">
+        <div>
+          <span class="node-label">Milestones</span>
+          <h2>Keep the moments that matter.</h2>
+          <p>First smile, first steps, the look they gave you on a Tuesday afternoon. Capture photos and notes in a journal that becomes a keepsake you can hold, not a feed you scroll past.</p>
+        </div>
+        <div class="feat-card">
+          <div class="reminder"><span class="dot"></span><div><b>First Smile</b><br><span>Captured 6 weeks in</span></div></div>
+          <div class="reminder"><span class="dot" style="background:#E9A484"></span><div><b>Rolled Over</b><br><span>A note and a photo</span></div></div>
+          <div class="reminder"><span class="dot"></span><div><b>First Word</b><br><span>Saved forever</span></div></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- KEEPSAKE / PRINT -->
+    <section class="feat reveal">
+      <div class="keepsake-band">
+        <div>
+          <span class="node-label">Keepsake</span>
+          <h2>Turn the moments into something you can hold.</h2>
+          <p>Every photo and milestone you save is quietly building a book. When you are ready, order it as a beautifully printed keepsake to keep on the shelf or give to grandparents, godparents, and friends.</p>
+          <div class="pill-row" style="margin-top:18px;">
+            <span class="pill warm">A Gift They Will Keep</span>
+            <span class="pill">You Choose The Photos</span>
+            <span class="pill">Deleted After Printing</span>
+          </div>
+        </div>
+        <div class="book-stack" aria-hidden="true">
+          <div class="page p3"></div>
+          <div class="page p2"></div>
+          <div class="page p1">
+            <span class="book-title">Mia's First Year</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- VALUES RECOMMENDATIONS -->
+    <section class="feat">
+      <div class="feat-grid flip reveal">
+        <div>
+          <span class="node-label">Recommendations</span>
+          <h2>Products that fit your family.</h2>
+          <p>Tell LittleWise what matters to you, from ingredients to certifications to how you like to shop. Recommendations are filtered to match, without ever asking your religion or storing anything sensitive.</p>
+        </div>
+        <div class="feat-card">
+          <div class="pill-row">
+            <span class="pill">Organic</span><span class="pill warm">Fragrance-Free</span>
+            <span class="pill">Non-GMO</span><span class="pill">Made In USA</span>
+            <span class="pill warm">Small Brands</span><span class="pill">Pediatrician Picked</span>
+          </div>
+          <p style="margin-top:18px;font-size:0.98rem;">Your values stay on your device. We match products to them, not the other way around.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- WELL VISITS -->
+    <section class="feat">
+      <div class="feat-grid reveal">
+        <div>
+          <span class="node-label">Reminders</span>
+          <h2>Never miss a checkup.</h2>
+          <p>LittleWise knows the pediatric well-visit schedule by heart and gives you a heads up a week before each one, so the appointments that sneak up on you no longer do.</p>
+        </div>
+        <div class="feat-card">
+          <div class="reminder"><span class="dot"></span><div><b>4-Month Well Visit</b><br><span>Coming up in about a week</span></div></div>
+          <div class="reminder"><span class="dot"></span><div><b>6-Month Well Visit</b><br><span>We will remind you early</span></div></div>
+          <div class="reminder"><span class="dot"></span><div><b>9-Month Well Visit</b><br><span>One less thing to track</span></div></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- PLANS -->
+    <section class="feat reveal">
+      <span class="node-label" style="margin-left:2px;">What You Get</span>
+      <h2 style="font-family:var(--display);font-weight:500;font-size:clamp(1.9rem,4vw,2.9rem);letter-spacing:-0.018em;margin-bottom:24px;">Free to start. Honest about the rest.</h2>
+      <div class="plans-grid">
+        <div class="plan">
+          <h3>Free</h3>
+          <p class="sub">The whole tracking experience, no cost.</p>
+          <ul>
+            <li>Growth tracking with WHO and CDC percentiles</li>
+            <li>Milestone journal with photos</li>
+            <li>Timelapse photo capture</li>
+            <li>Weekly pregnancy cards</li>
+            <li>Product recommendations matched to your values</li>
+            <li>Well-visit and milestone reminders</li>
+          </ul>
+        </div>
+        <div class="plan featured">
+          <span class="tag">Premium</span>
+          <h3>Premium</h3>
+          <p class="sub">The extras that turn tracking into keeping.</p>
+          <ul>
+            <li>Everything in Free</li>
+            <li>Timelapse compiled into a video you can watch and share</li>
+            <li>Co-parent sync over your home WiFi</li>
+            <li>Full theme and color customization</li>
+            <li>Deeper growth and development insights</li>
+          </ul>
+          <div class="grandfather">Join during early access and Premium stays free for you, for good.</div>
+        </div>
+      </div>
+      <div class="print-callout">
+        <div>
+          <b>The Printed Keepsake</b>
+          <span>A one-time purchase, only when you want something physical. No subscription required.</span>
+        </div>
+        <span class="print-icon" aria-hidden="true">📖</span>
+      </div>
+    </section>
+
+    <!-- DOWNLOAD -->
+    <section class="closing reveal" id="get">
+      <h2>Start with LittleWise.</h2>
+      <p>Free to use today. Choose your phone below.</p>
+      <div class="download-grid">
+        <div class="dl-card">
+          <span class="dl-os">iPhone</span>
+          <p>One tap. TestFlight handles the rest.</p>
+          <a class="btn btn-primary" href="https://testflight.apple.com/join/VZbVWYhA">Download On TestFlight</a>
+        </div>
+        <div class="dl-card">
+          <span class="dl-os">Android</span>
+          <p>Two quick steps while we are in early testing.</p>
+          <ol class="dl-steps">
+            <li><b>Step 1.</b> Join the tester list so Google can let you in.<br>
+              <a href="https://groups.google.com/g/littlewise-testers">Join The Tester Group</a></li>
+            <li><b>Step 2.</b> Opt in, then install from the Play Store.<br>
+              <a href="https://play.google.com/store/apps/details?id=com.littlewise.app">Get It On Google Play</a></li>
+          </ol>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <footer>
+    <div class="foot-inner">
+      <div class="brand"><span class="mark">LW</span> LittleWise</div>
+      <div class="foot-links">
+        <a href="https://testflight.apple.com/join/VZbVWYhA">Download</a>
+        <a href="https://whutto87.github.io/littlewise-privacy/">Privacy Promise</a>
+        <a href="https://ko-fi.com/littlewisedev">Support The App</a>
+      </div>
+      <div class="foot-note">Made for families. Coming soon to Android.</div>
+    </div>
+  </footer>
+
+<script>
+(function () {
+  var reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  /* ---- Scroll reveal (cheap, smooth, no scroll listener) ---- */
+  var reveals = document.querySelectorAll(".reveal");
+  if ("IntersectionObserver" in window && !reduce) {
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) {
+        if (e.isIntersecting) { e.target.classList.add("in"); io.unobserve(e.target); }
+      });
+    }, { threshold: 0.14, rootMargin: "0px 0px -8% 0px" });
+    reveals.forEach(function (el) { io.observe(el); });
+  } else {
+    reveals.forEach(function (el) { el.classList.add("in"); });
+  }
+
+  if (reduce) {
+    // Fill the thread statically and stop. No motion.
+    var tf = document.getElementById("threadFill");
+    if (tf) tf.style.transform = "scaleY(1)";
+    return;
+  }
+
+  /* ---- Parallax + thread, all in one rAF loop ---- */
+  var drifters = Array.prototype.slice.call(document.querySelectorAll("[data-depth]"));
+  var phone = document.getElementById("heroPhone");
+  var fill  = document.getElementById("threadFill");
+  var bead  = document.getElementById("threadBead");
+
+  var vh = window.innerHeight;
+  var docH = 1;
+  var smallScreen = window.matchMedia("(max-width: 860px)").matches;
+  var ticking = false;
+  var lastY = window.scrollY || 0;
+
+  function measure() {
+    vh = window.innerHeight;
+    docH = Math.max(document.body.scrollHeight - vh, 1);
+    smallScreen = window.matchMedia("(max-width: 860px)").matches;
+  }
+
+  function render() {
+    ticking = false;
+    var y = lastY;
+
+    // Background shapes and logo watermark drift at fractional speed (reduced on phones)
+    var damp = smallScreen ? 0.4 : 1;
+    for (var i = 0; i < drifters.length; i++) {
+      var d = parseFloat(drifters[i].getAttribute("data-depth")) || 0.15;
+      var shift = -(y * d * damp);
+      drifters[i].style.transform = "translate3d(0," + shift.toFixed(1) + "px,0)";
+    }
+
+    // Hero phone gentle counter-drift for depth (desktop only)
+    if (phone && !smallScreen) {
+      phone.style.transform = "translate3d(0," + (y * 0.06).toFixed(1) + "px,0)";
+    } else if (phone) {
+      phone.style.transform = "";
+    }
+
+    // Growth thread fills with scroll progress; bead rides the leading edge
+    var p = Math.min(Math.max(y / docH, 0), 1);
+    if (fill) fill.style.transform = "scaleY(" + p.toFixed(4) + ")";
+    if (bead && !smallScreen) {
+      bead.style.transform = "translate3d(0," + (p * vh).toFixed(1) + "px,0)";
+    }
+  }
+
+  function onScroll() {
+    lastY = window.scrollY || window.pageYOffset || 0;
+    if (!ticking) { ticking = true; requestAnimationFrame(render); }
+  }
+
+  measure();
+  render();
+  window.addEventListener("scroll", onScroll, { passive: true });
+  window.addEventListener("resize", function () { measure(); render(); }, { passive: true });
+})();
+</script>
+</body>
+</html>
