@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LittleWise Registry</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --green: #7CC8A0;
+      --green-light: #F0FAF5;
+      --green-dark: #5aab83;
+      --text: #1A1A1A;
+      --text-muted: #888;
+      --border: #E8F5EE;
+      --bg: #FAFDF8;
+      --white: #ffffff;
+      --gold: #F5C842;
+      --red: #E05252;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* ── Header ── */
+    .header {
+      background: var(--white);
+      border-bottom: 2px solid var(--border);
+      padding: 20px 24px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .header-logo { font-size: 28px; }
+    .header-title { font-size: 20px; font-weight: 800; color: var(--text); }
+    .header-sub { font-size: 13px; color: var(--text-muted); margin-top: 2px; }
+
+    /* ── Gate screen ── */
+    #gate {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: calc(100vh - 80px);
+      padding: 32px 24px;
+    }
+
+    .gate-card {
+      background: var(--white);
+      border-radius: 24px;
+      border: 2px solid var(--border);
+      padding: 36px 32px;
+      width: 100%;
+      max-width: 420px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.06);
+    }
+
+    .gate-emoji { font-size: 48px; text-align: center; margin-bottom: 16px; }
+    .gate-title { font-size: 24px; font-weight: 800; text-align: center; margin-bottom: 8px; }
+    .gate-sub { font-size: 14px; color: var(--text-muted); text-align: center; line-height: 1.5; margin-bottom: 28px; }
+
+    label {
+      display: block;
+      font-size: 13px;
+      font-weight: 700;
+      color: #555;
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    input[type="email"],
+    input[type="text"] {
+      width: 100%;
+      border: 2px solid var(--border);
+      border-radius: 12px;
+      padding: 14px 16px;
+      font-size: 16px;
+      color: var(--text);
+      background: var(--bg);
+      outline: none;
+      transition: border-color 0.2s;
+      margin-bottom: 16px;
+    }
+    input:focus { border-color: var(--green); }
+
+    .btn {
+      width: 100%;
+      background: var(--green);
+      color: var(--white);
+      border: none;
+      border-radius: 14px;
+      padding: 16px;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.1s;
+      box-shadow: 0 4px 16px rgba(124,200,160,0.35);
+    }
+    .btn:hover { background: var(--green-dark); }
+    .btn:active { transform: scale(0.98); }
+    .btn:disabled { background: #ccc; box-shadow: none; cursor: not-allowed; }
+
+    .error-msg {
+      background: #FEF2F2;
+      border: 1px solid #FECACA;
+      border-radius: 10px;
+      padding: 12px 16px;
+      font-size: 14px;
+      color: var(--red);
+      margin-bottom: 16px;
+      display: none;
+    }
+
+    /* ── Registry screen ── */
+    #registry { display: none; padding: 24px; max-width: 680px; margin: 0 auto; }
+
+    .registry-header {
+      background: var(--white);
+      border-radius: 20px;
+      border: 2px solid var(--border);
+      padding: 24px;
+      margin-bottom: 24px;
+      text-align: center;
+    }
+    .registry-family { font-size: 22px; font-weight: 800; margin-bottom: 4px; }
+    .registry-tagline { font-size: 14px; color: var(--text-muted); }
+    .registry-progress {
+      margin-top: 16px;
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+    .progress-bar {
+      height: 6px;
+      background: var(--border);
+      border-radius: 3px;
+      margin-top: 8px;
+      overflow: hidden;
+    }
+    .progress-fill {
+      height: 6px;
+      background: var(--green);
+      border-radius: 3px;
+      transition: width 0.4s ease;
+    }
+
+    .section-label {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      margin-bottom: 12px;
+      padding-left: 4px;
+    }
+
+    .items-list { display: flex; flex-direction: column; gap: 12px; margin-bottom: 32px; }
+
+    .item-card {
+      background: var(--white);
+      border-radius: 16px;
+      border: 2px solid var(--border);
+      padding: 18px 20px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      transition: border-color 0.2s, opacity 0.2s;
+    }
+    .item-card.claimed {
+      opacity: 0.6;
+      border-color: #ddd;
+    }
+
+    .item-icon { font-size: 28px; flex-shrink: 0; }
+
+    .item-info { flex: 1; min-width: 0; }
+    .item-name { font-size: 16px; font-weight: 700; margin-bottom: 3px; }
+    .item-desc { font-size: 13px; color: var(--text-muted); line-height: 1.4; }
+    .item-claimed-by { font-size: 12px; color: var(--green-dark); font-weight: 600; margin-top: 4px; }
+
+    .item-actions { display: flex; flex-direction: column; gap: 8px; flex-shrink: 0; }
+
+    .btn-buy {
+      background: var(--green);
+      color: var(--white);
+      border: none;
+      border-radius: 10px;
+      padding: 10px 16px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      white-space: nowrap;
+      text-decoration: none;
+      display: inline-block;
+      text-align: center;
+      transition: background 0.2s;
+    }
+    .btn-buy:hover { background: var(--green-dark); }
+
+    .btn-claim {
+      background: var(--white);
+      color: var(--green);
+      border: 2px solid var(--green);
+      border-radius: 10px;
+      padding: 8px 16px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background 0.2s, color 0.2s;
+    }
+    .btn-claim:hover { background: var(--green-light); }
+    .btn-claim.claimed-btn {
+      border-color: #ddd;
+      color: #aaa;
+      cursor: default;
+    }
+
+    /* ── Claim modal ── */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+    .modal-overlay.active { display: flex; }
+    .modal {
+      background: var(--white);
+      border-radius: 20px;
+      padding: 28px;
+      width: 100%;
+      max-width: 380px;
+      box-shadow: 0 8px 40px rgba(0,0,0,0.15);
+    }
+    .modal-title { font-size: 20px; font-weight: 800; margin-bottom: 8px; }
+    .modal-sub { font-size: 14px; color: var(--text-muted); margin-bottom: 20px; line-height: 1.5; }
+    .modal-actions { display: flex; gap: 10px; margin-top: 16px; }
+    .btn-secondary {
+      flex: 1;
+      background: var(--white);
+      color: var(--text-muted);
+      border: 2px solid #ddd;
+      border-radius: 12px;
+      padding: 14px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .btn-primary {
+      flex: 2;
+      background: var(--green);
+      color: var(--white);
+      border: none;
+      border-radius: 12px;
+      padding: 14px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    /* ── Footer ── */
+    .registry-footer {
+      text-align: center;
+      font-size: 12px;
+      color: #ccc;
+      padding: 24px;
+      line-height: 1.8;
+    }
+    .registry-footer a { color: var(--green); text-decoration: none; }
+
+    /* ── Loading ── */
+    .loading {
+      text-align: center;
+      padding: 48px;
+      color: var(--text-muted);
+      font-size: 15px;
+    }
+    .spinner {
+      width: 32px;
+      height: 32px;
+      border: 3px solid var(--border);
+      border-top-color: var(--green);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin: 0 auto 16px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Empty state ── */
+    .empty {
+      text-align: center;
+      padding: 48px 24px;
+      color: var(--text-muted);
+    }
+    .empty-emoji { font-size: 40px; margin-bottom: 12px; }
+    .empty-title { font-size: 18px; font-weight: 700; color: var(--text); margin-bottom: 8px; }
+
+    @media (max-width: 480px) {
+      .item-card { flex-wrap: wrap; }
+      .item-actions { flex-direction: row; width: 100%; }
+      .btn-buy, .btn-claim { flex: 1; }
+      .gate-card { padding: 28px 20px; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <div class="header-logo">🌱</div>
+    <div>
+      <div class="header-title">LittleWise Registry</div>
+      <div class="header-sub">Privacy-first baby registry</div>
+    </div>
+  </div>
+
+  <!-- Gate screen -->
+  <div id="gate">
+    <div class="gate-card">
+      <div class="gate-emoji">🎁</div>
+      <div class="gate-title">View a Registry</div>
+      <div class="gate-sub">Enter the parent's email and the code they shared with you to see their registry.</div>
+
+      <div id="gate-error" class="error-msg">That email and code combination wasn't found. Double-check and try again.</div>
+
+      <label for="input-email">Parent's Email</label>
+      <input type="email" id="input-email" placeholder="parent@example.com" autocomplete="email" />
+
+      <label for="input-code">Registry Code</label>
+      <input type="text" id="input-code" placeholder="e.g. BABYJUNE" autocomplete="off" style="text-transform:uppercase;" />
+
+      <button class="btn" id="btn-view" onclick="viewRegistry()">View Registry</button>
+    </div>
+  </div>
+
+  <!-- Registry screen -->
+  <div id="registry">
+    <div class="registry-header">
+      <div class="registry-family" id="registry-title">Registry</div>
+      <div class="registry-tagline">Help this family prepare for their new arrival 💛</div>
+      <div class="registry-progress" id="registry-progress"></div>
+      <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+    </div>
+
+    <div id="registry-content">
+      <div class="loading"><div class="spinner"></div>Loading registry...</div>
+    </div>
+  </div>
+
+  <!-- Claim modal -->
+  <div class="modal-overlay" id="claim-modal">
+    <div class="modal">
+      <div class="modal-title">Mark as Purchased?</div>
+      <div class="modal-sub" id="claim-modal-sub">This lets the family know this item has been taken care of so no one buys it twice.</div>
+      <input type="text" id="claim-name" placeholder="Your name (optional)" style="margin-bottom:0;" />
+      <div class="modal-actions">
+        <button class="btn-secondary" onclick="closeClaimModal()">Cancel</button>
+        <button class="btn-primary" onclick="confirmClaim()">Yes, I got it</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const SUPABASE_URL = "https://bnyqcigceirtkyogkqnh.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJueXFjaWdjZWlydGt5b2drcW5oIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc1MzMxNDAsImV4cCI6MjA5MzEwOTE0MH0.agUBIaunS3Ox_8rYdzf5JATEJFKhQo7YvXJkBXAuDMg";
+    const AFFILIATE_TAG = "babyapp20-20";
+
+    let currentEmail = "";
+    let currentCode = "";
+    let pendingItemId = null;
+    let items = [];
+
+    async function supabaseRpc(fn, params) {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${fn}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "apikey": SUPABASE_ANON_KEY,
+          "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
+        },
+        body: JSON.stringify(params),
+      });
+      if (!res.ok) throw new Error(await res.text());
+      return res.json();
+    }
+
+    async function viewRegistry() {
+      const email = document.getElementById("input-email").value.trim();
+      const code = document.getElementById("input-code").value.trim().toUpperCase();
+      const btn = document.getElementById("btn-view");
+      const errEl = document.getElementById("gate-error");
+
+      if (!email || !code) return;
+
+      errEl.style.display = "none";
+      btn.disabled = true;
+      btn.textContent = "Looking up...";
+
+      try {
+        const data = await supabaseRpc("view_registry", { p_email: email, p_code: code });
+
+        if (!data || data.length === 0) {
+          errEl.style.display = "block";
+          btn.disabled = false;
+          btn.textContent = "View Registry";
+          return;
+        }
+
+        currentEmail = email;
+        currentCode = code;
+        items = data;
+
+        document.getElementById("gate").style.display = "none";
+        document.getElementById("registry").style.display = "block";
+        renderRegistry();
+
+      } catch (e) {
+        errEl.style.display = "block";
+        btn.disabled = false;
+        btn.textContent = "View Registry";
+      }
+    }
+
+    function buildAmazonLink(searchQuery) {
+      return `https://www.amazon.com/s?k=${encodeURIComponent(searchQuery)}&tag=${AFFILIATE_TAG}`;
+    }
+
+    function renderRegistry() {
+      const total = items.length;
+      const claimed = items.filter(i => i.claimed).length;
+      const pct = total ? Math.round((claimed / total) * 100) : 0;
+
+      document.getElementById("registry-title").textContent = "Registry";
+      document.getElementById("registry-progress").textContent = `${claimed} of ${total} items claimed`;
+      document.getElementById("progress-fill").style.width = pct + "%";
+
+      const unclaimed = items.filter(i => !i.claimed);
+      const claimedItems = items.filter(i => i.claimed);
+
+      let html = "";
+
+      if (unclaimed.length > 0) {
+        html += `<div class="section-label">Still Needed (${unclaimed.length})</div>`;
+        html += `<div class="items-list">`;
+        unclaimed.forEach(item => {
+          html += renderItem(item);
+        });
+        html += `</div>`;
+      }
+
+      if (claimedItems.length > 0) {
+        html += `<div class="section-label">Already Claimed (${claimedItems.length})</div>`;
+        html += `<div class="items-list">`;
+        claimedItems.forEach(item => {
+          html += renderItem(item);
+        });
+        html += `</div>`;
+      }
+
+      if (items.length === 0) {
+        html = `<div class="empty"><div class="empty-emoji">🌱</div><div class="empty-title">Registry is empty</div><p>This family hasn't added any items yet.</p></div>`;
+      }
+
+      html += `<div class="registry-footer">
+        Powered by <a href="https://whutto87.github.io/littlewise-site/" target="_blank">LittleWise Baby</a> &mdash;
+        Privacy-first baby tracking<br>
+        Links to Amazon may earn a small commission at no cost to you.
+      </div>`;
+
+      document.getElementById("registry-content").innerHTML = html;
+    }
+
+    function renderItem(item) {
+      const amazonUrl = buildAmazonLink(item.search_query);
+      const isClaimed = item.claimed;
+
+      return `
+        <div class="item-card ${isClaimed ? 'claimed' : ''}" id="item-${item.item_id}">
+          <div class="item-icon">${item.icon || '🎁'}</div>
+          <div class="item-info">
+            <div class="item-name">${escHtml(item.name)}</div>
+            ${item.claimed_label ? `<div class="item-claimed-by">Claimed by ${escHtml(item.claimed_label)}</div>` : ''}
+          </div>
+          <div class="item-actions">
+            <a class="btn-buy" href="${amazonUrl}" target="_blank" rel="noopener">Shop Amazon →</a>
+            ${isClaimed
+              ? `<button class="btn-claim claimed-btn" disabled>Claimed</button>`
+              : `<button class="btn-claim" onclick="openClaimModal('${item.item_id}', '${escHtml(item.name).replace(/'/g, "\\'")}')">I'll get this</button>`
+            }
+          </div>
+        </div>`;
+    }
+
+    function escHtml(str) {
+      return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    function openClaimModal(itemId, itemName) {
+      pendingItemId = itemId;
+      document.getElementById("claim-modal-sub").textContent =
+        `This lets the family know "${itemName}" has been taken care of so no one buys it twice.`;
+      document.getElementById("claim-name").value = "";
+      document.getElementById("claim-modal").classList.add("active");
+    }
+
+    function closeClaimModal() {
+      pendingItemId = null;
+      document.getElementById("claim-modal").classList.remove("active");
+    }
+
+    async function confirmClaim() {
+      if (!pendingItemId) return;
+      const label = document.getElementById("claim-name").value.trim() || null;
+
+      try {
+        await supabaseRpc("claim_registry_item", {
+          p_email: currentEmail,
+          p_code: currentCode,
+          p_item_id: pendingItemId,
+          p_label: label,
+        });
+
+        // Update local state
+        const item = items.find(i => i.item_id === pendingItemId);
+        if (item) {
+          item.claimed = true;
+          item.claimed_label = label;
+        }
+
+        closeClaimModal();
+        renderRegistry();
+      } catch (e) {
+        closeClaimModal();
+        alert("Something went wrong. Please try again.");
+      }
+    }
+
+    // Allow Enter key on gate inputs
+    document.addEventListener("DOMContentLoaded", () => {
+      ["input-email", "input-code"].forEach(id => {
+        document.getElementById(id).addEventListener("keydown", e => {
+          if (e.key === "Enter") viewRegistry();
+        });
+      });
+    });
+  </script>
+
+</body>
+</html>
