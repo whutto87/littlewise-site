@@ -308,12 +308,6 @@
   .dl-os { display: inline-block; font-weight: 700; font-size: 0.76rem; letter-spacing: 0.12em;
     text-transform: uppercase; color: var(--sage-deep); margin-bottom: 10px; }
   .dl-card > p { color: var(--muted-solid); font-size: 1rem; margin: 0 0 18px; max-width: none; }
-  .dl-steps { list-style: none; display: flex; flex-direction: column; gap: 15px; }
-  .dl-steps li { font-size: 0.98rem; color: var(--ink); line-height: 1.5; }
-  .dl-steps li b { color: var(--sage-deep); }
-  .dl-steps a { display: inline-block; margin-top: 7px; font-weight: 700; color: var(--sage-deep);
-    text-decoration: none; border-bottom: 2px solid rgba(124,200,160,0.5); }
-  .dl-steps a:hover { border-color: var(--sage-deep); }
 
   /* ---------- Responsive ---------- */
   @media (max-width: 860px) {
@@ -349,9 +343,6 @@
     <div class="blob blob-2" data-depth="0.30"></div>
     <div class="blob blob-3" data-depth="0.12"></div>
 
-    <!-- Logo watermark drifts faster than the page to make the parallax depth visible.
-         To use your real logo, replace each .wm-mark div with:
-         <img src="logo.png" class="wm-img" alt="" /> -->
     <div class="logo-watermark wm-top" data-depth="0.26"><div class="wm-mark">LW</div></div>
     <div class="logo-watermark wm-bottom" data-depth="0.20"><div class="wm-mark">LW</div></div>
   </div>
@@ -376,7 +367,7 @@
         <h1>The baby book that <em>builds itself</em>.</h1>
         <p class="lead">Track growth, capture milestones, and watch them change week by week. It all stays on your phone.</p>
         <div class="cta-row">
-          <a class="btn btn-primary" href="https://apps.apple.com/app/id6772429871">Download On The App Store</a>
+          <a class="btn btn-primary" href="/get.html?src=site-hero">Get LittleWise</a>
           <a class="btn btn-ghost" href="https://whutto87.github.io/littlewise-privacy/">Our Privacy Promise</a>
         </div>
       </div>
@@ -586,18 +577,13 @@
       <div class="download-grid">
         <div class="dl-card">
           <span class="dl-os">iPhone</span>
-          <p>One tap. Download straight from the App Store.</p>
-          <a class="btn btn-primary" href="https://apps.apple.com/app/id6772429871">Download On The App Store</a>
+          <p>Download straight from the App Store.</p>
+          <a class="btn btn-primary" href="/get.html?src=site-ios">Get On The App Store</a>
         </div>
         <div class="dl-card">
           <span class="dl-os">Android</span>
-          <p>Two quick steps while we are in early testing.</p>
-          <ol class="dl-steps">
-            <li><b>Step 1.</b> Join the tester list so Google can let you in.<br>
-              <a href="https://groups.google.com/g/littlewise-testers">Join The Tester Group</a></li>
-            <li><b>Step 2.</b> Opt in, then install from the Play Store.<br>
-              <a href="https://play.google.com/store/apps/details?id=com.littlewise.app">Get It On Google Play</a></li>
-          </ol>
+          <p>Download straight from Google Play.</p>
+          <a class="btn btn-primary" href="/get.html?src=site-android">Get On Google Play</a>
         </div>
       </div>
     </section>
@@ -608,11 +594,11 @@
     <div class="foot-inner">
       <div class="brand"><span class="mark">LW</span> LittleWise</div>
       <div class="foot-links">
-        <a href="https://apps.apple.com/app/id6772429871">Download</a>
+        <a href="/get.html?src=site-footer">Download</a>
         <a href="https://whutto87.github.io/littlewise-privacy/">Privacy Promise</a>
         <a href="https://ko-fi.com/littlewisedev">Support The App</a>
       </div>
-      <div class="foot-note">Made for families. Coming soon to Android.</div>
+      <div class="foot-note">Made for families. Available on iPhone and Android.</div>
     </div>
   </footer>
 
@@ -620,7 +606,6 @@
 (function () {
   var reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-  /* ---- Scroll reveal (cheap, smooth, no scroll listener) ---- */
   var reveals = document.querySelectorAll(".reveal");
   if ("IntersectionObserver" in window && !reduce) {
     var io = new IntersectionObserver(function (entries) {
@@ -634,13 +619,11 @@
   }
 
   if (reduce) {
-    // Fill the thread statically and stop. No motion.
     var tf = document.getElementById("threadFill");
     if (tf) tf.style.transform = "scaleY(1)";
     return;
   }
 
-  /* ---- Parallax + thread, all in one rAF loop ---- */
   var drifters = Array.prototype.slice.call(document.querySelectorAll("[data-depth]"));
   var phone = document.getElementById("heroPhone");
   var fill  = document.getElementById("threadFill");
@@ -662,7 +645,6 @@
     ticking = false;
     var y = lastY;
 
-    // Background shapes and logo watermark drift at fractional speed (reduced on phones)
     var damp = smallScreen ? 0.4 : 1;
     for (var i = 0; i < drifters.length; i++) {
       var d = parseFloat(drifters[i].getAttribute("data-depth")) || 0.15;
@@ -670,14 +652,12 @@
       drifters[i].style.transform = "translate3d(0," + shift.toFixed(1) + "px,0)";
     }
 
-    // Hero phone gentle counter-drift for depth (desktop only)
     if (phone && !smallScreen) {
       phone.style.transform = "translate3d(0," + (y * 0.06).toFixed(1) + "px,0)";
     } else if (phone) {
       phone.style.transform = "";
     }
 
-    // Growth thread fills with scroll progress; bead rides the leading edge
     var p = Math.min(Math.max(y / docH, 0), 1);
     if (fill) fill.style.transform = "scaleY(" + p.toFixed(4) + ")";
     if (bead && !smallScreen) {
