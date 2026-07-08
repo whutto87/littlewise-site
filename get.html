@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Get LittleWise</title>
+  <meta name="description" content="LittleWise — private baby tracking. Get the app." />
+  <style>
+    :root {
+      --green: #7CC8A0;
+      --bg: #FAFDF8;
+      --ink: #1A3A2A;
+    }
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      min-height: 100vh;
+    }
+    .wrap {
+      max-width: 480px;
+      margin: 0 auto;
+      padding: 48px 24px;
+      text-align: center;
+    }
+    h1 {
+      font-size: 28px;
+      margin: 24px 0 8px;
+      font-weight: 700;
+    }
+    p {
+      font-size: 16px;
+      opacity: 0.75;
+      margin: 0 0 32px;
+      line-height: 1.5;
+    }
+    .btn {
+      display: inline-block;
+      background: var(--green);
+      color: #fff;
+      text-decoration: none;
+      font-weight: 700;
+      font-size: 16px;
+      padding: 14px 28px;
+      border-radius: 12px;
+      margin: 8px;
+      min-width: 200px;
+    }
+    .btn.secondary {
+      background: transparent;
+      color: var(--ink);
+      border: 1.5px solid var(--ink);
+      opacity: 0.6;
+    }
+    .spinner {
+      display: inline-block;
+      width: 32px;
+      height: 32px;
+      border: 3px solid rgba(124, 200, 160, 0.2);
+      border-top-color: var(--green);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin: 24px 0;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .logo {
+      font-size: 40px;
+      font-weight: 800;
+      color: var(--green);
+      letter-spacing: -0.5px;
+    }
+    #manual { display: none; margin-top: 24px; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="logo">LittleWise</div>
+    <div class="spinner" id="spinner"></div>
+    <h1 id="msg">Taking you to the store…</h1>
+    <p id="sub">If nothing happens in a moment, tap your device below.</p>
+
+    <div id="manual">
+      <a class="btn" id="iosBtn" href="#">Get on App Store</a>
+      <a class="btn" id="androidBtn" href="#">Get on Google Play</a>
+      <a class="btn secondary" id="siteBtn" href="/">Back to site</a>
+    </div>
+  </div>
+
+  <script>
+    // ---- CONFIG ------------------------------------------------------------
+    // Store destinations. Update these if IDs ever change.
+    var IOS_APP_ID    = "6772429871";
+    var ANDROID_PKG   = "com.littlewise.app";
+    var MARKETING_URL = "/"; // fallback for desktop
+
+    // ---- ATTRIBUTION -------------------------------------------------------
+    // Read ?src=cards / ?src=social / ?src=tiktok etc. from our own URL,
+    // then forward it into store-native campaign params so Play Console
+    // and App Store Connect can report installs per channel.
+    function getParam(name) {
+      var m = new RegExp("[?&]" + name + "=([^&]+)").exec(window.location.search);
+      return m ? decodeURIComponent(m[1]) : null;
+    }
+    var src = getParam("src") || "direct";
+
+    // iOS App Store: ?ct=<campaign> surfaces in App Analytics → Sources.
+    // pt is a "provider token" (optional); mt=8 tells the store this is an app.
+    var iosURL = "https://apps.apple.com/app/id" + IOS_APP_ID
+               + "?ct=" + encodeURIComponent(src)
+               + "&mt=8";
+
+    // Google Play: install-referrer via &referrer=<url-encoded utm string>.
+    // Surfaces in Play Console acquisition reports under UTM source.
+    var referrer = "utm_source=" + encodeURIComponent(src)
+                 + "&utm_medium=qr"
+                 + "&utm_campaign=launch";
+    var androidURL = "https://play.google.com/store/apps/details?id=" + ANDROID_PKG
+                   + "&referrer=" + encodeURIComponent(referrer);
+
+    // ---- OS DETECTION ------------------------------------------------------
+    // User-agent sniffing is fine here because we only need iOS / Android /
+    // other. Modern iPads report as Mac in some browsers, so we also check
+    // for touch support to catch them.
+    var ua = navigator.userAgent || "";
+    var isIOS     = /iPhone|iPad|iPod/i.test(ua)
+                    || (ua.indexOf("Mac") !== -1 && "ontouchend" in document);
+    var isAndroid = /Android/i.test(ua);
+
+    // ---- ROUTE -------------------------------------------------------------
+    var target = null;
+    if (isIOS) target = iosURL;
+    else if (isAndroid) target = androidURL;
+
+    // Wire up manual fallback buttons (shown if auto-redirect is blocked).
+    document.getElementById("iosBtn").href     = iosURL;
+    document.getElementById("androidBtn").href = androidURL;
+    document.getElementById("siteBtn").href    = MARKETING_URL;
+
+    if (target) {
+      // Small delay lets the spinner render so it doesn't feel like a broken
+      // link. If the redirect is blocked (rare), the manual buttons appear.
+      setTimeout(function () { window.location.replace(target); }, 400);
+      setTimeout(function () {
+        document.getElementById("manual").style.display = "block";
+        document.getElementById("msg").textContent = "Not redirected?";
+        document.getElementById("sub").textContent = "Tap the store for your device.";
+        document.getElementById("spinner").style.display = "none";
+      }, 2500);
+    } else {
+      // Desktop or unknown: show all options immediately.
+      document.getElementById("spinner").style.display = "none";
+      document.getElementById("msg").textContent = "Get LittleWise";
+      document.getElementById("sub").textContent = "Choose your device.";
+      document.getElementById("manual").style.display = "block";
+    }
+  </script>
+</body>
+</html>
